@@ -232,7 +232,7 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-gradient-to-br from-neon/20 to-transparent" />
 
                 <Image
-                  src="/sudharsan-profile.jpeg"
+                  src="/Sudharsan-profile.jpeg"
                   alt="Sudharsan M"
                   fill
                   sizes="(max-width: 768px) 18rem, 24rem"
