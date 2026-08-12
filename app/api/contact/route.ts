@@ -13,8 +13,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate email format
+    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
@@ -22,60 +23,74 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the contact form submission
-    console.log("Contact form submission:", {
-      name,
-      email,
-      subject,
-      message,
-      timestamp: new Date().toISOString()
+    const resendApiKey = process.env.RESEND_API_KEY
+
+    // Check Resend API key
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY is missing")
+
+      return NextResponse.json(
+        { error: "Email service is not configured" },
+        { status: 500 }
+      )
+    }
+
+    // Send email using Resend
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "onboarding@resend.dev",
+        to: "sudharsan022601@gmail.com",
+        reply_to: email,
+        subject: `Portfolio Contact: ${subject}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>New Portfolio Contact Message</h2>
+
+            <p><strong>Name:</strong> ${name}</p>
+
+            <p><strong>Email:</strong> ${email}</p>
+
+            <p><strong>Subject:</strong> ${subject}</p>
+
+            <hr />
+
+            <h3>Message</h3>
+
+            <p>${message.replace(/\n/g, "<br />")}</p>
+          </div>
+        `,
+      }),
     })
 
-    // In a production environment, you would integrate with an email service
-    // Options include:
-    // 1. EmailJS (client-side, no backend needed)
-    // 2. Resend API (https://resend.com)
-    // 3. SendGrid API
-    // 4. Nodemailer with SMTP
-    // 5. Formspree (form handling service)
+    const data = await response.json()
 
-    // Example using Resend API (uncomment and add your API key)
-    
-    const resendApiKey = process.env.RESEND_API_KEY
-    if (resendApiKey) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from: "portfolio@yourdomain.com",
-          to: "sudharsan022601@gmail.com",
-          subject: `Portfolio Contact: ${subject}`,
-          html: `
-            <h2>New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>${message}</p>
-          `
-        })
-      })
+    if (!response.ok) {
+      console.error("Resend API error:", data)
+
+      return NextResponse.json(
+        { error: "Failed to send email" },
+        { status: 500 }
+      )
     }
-    
+
+    console.log("Email sent successfully:", data)
 
     return NextResponse.json({
       success: true,
-      message: "Thank you for your message! I will get back to you soon."
+      message: "Thank you for your message! I will get back to you soon.",
     })
   } catch (error) {
     console.error("Contact API error:", error)
+
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
-        message: "Something went wrong. Please try again."
+        message: "Something went wrong. Please try again.",
       },
       { status: 500 }
     )
