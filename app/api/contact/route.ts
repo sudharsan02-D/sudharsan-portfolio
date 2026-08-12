@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
     const { name, email, subject, message } = body
 
     // Validate required fields
@@ -23,9 +24,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get Resend API key from environment variables
     const resendApiKey = process.env.RESEND_API_KEY
 
-    // Check Resend API key
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is missing")
 
@@ -38,30 +39,41 @@ export async function POST(request: NextRequest) {
     // Send email using Resend
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
+
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
+
       body: JSON.stringify({
         from: "onboarding@resend.dev",
-        to: "sudharsan022601@gmail.com",
+        to: "sudarshanmssudarshan@gmail.com",
         reply_to: email,
         subject: `Portfolio Contact: ${subject}`,
+
         html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.6;">
             <h2>New Portfolio Contact Message</h2>
 
-            <p><strong>Name:</strong> ${name}</p>
+            <p>
+              <strong>Name:</strong> ${name}
+            </p>
 
-            <p><strong>Email:</strong> ${email}</p>
+            <p>
+              <strong>Email:</strong> ${email}
+            </p>
 
-            <p><strong>Subject:</strong> ${subject}</p>
+            <p>
+              <strong>Subject:</strong> ${subject}
+            </p>
 
             <hr />
 
             <h3>Message</h3>
 
-            <p>${message.replace(/\n/g, "<br />")}</p>
+            <p>
+              ${String(message).replace(/\n/g, "<br />")}
+            </p>
           </div>
         `,
       }),
@@ -73,7 +85,9 @@ export async function POST(request: NextRequest) {
       console.error("Resend API error:", data)
 
       return NextResponse.json(
-        { error: "Failed to send email" },
+        {
+          error: "Failed to send email",
+        },
         { status: 500 }
       )
     }
